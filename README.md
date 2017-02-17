@@ -41,7 +41,7 @@ test1.aa.com 和 test2.aa.com 可以指定相同的 document.domain = "aa.com"; 
     document.domain = window.UEDITOR_CONFIG.customDomainValue;
 ```
 
-## 3. 在 simple.upload.js中修改 单文件提交的 action 值，用来在服务的进行判断
+## 3. 在 simple.upload.js中修改 单文件提交的 action 值，用来在服务端进行判断
 
 > 如果是 ueditor.all.js 则找到 simpleupload 所在的位置。
 修改如下位置
@@ -54,7 +54,7 @@ var imageActionUrl = me.getActionUrl(me.getOpt('imageActionName'));
 ``` js
 var imageActionUrl = me.getActionUrl(me.getOpt('imageActionName')) + '&callback=crossdomain&customDomainValue=' + me.getOpt('customDomainValue');
 ```
-再修改写会的值
+再修改写回的图片URL地址，因为图片保存在了 bb.com 的域名下，这部分的URL建议放在服务端处理（此处修改仅为演示效果）。
 ```js
 link = me.options.imageUrlPrefix + json.url;
 
@@ -63,7 +63,7 @@ link = me.getOpt('serverRoot') + me.options.imageUrlPrefix + json.url;
 ```
 
 
-## 4. 修改服务端（该服务端在域名b.com下），根据参数进行判断，将获取的结果传回原域名下的服务端接口，用于接收。
+## 4. 修改服务端（该服务端在域名bb.com下），根据参数进行判断，将获取的结果传回原域名下的服务端接口，用于接收。
 
 > 以PHP为例，修改 controller.php (这个为入口文件)
 
