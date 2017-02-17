@@ -30,7 +30,7 @@
         UEDITOR_HOME_URL: URL
 
         // 服务器统一请求接口路径
-        , serverUrl: URL + "php/controller.php"
+        , serverUrl: "http://bb.com/" + "php/controller.php"
 
         //工具栏上的所有的功能按钮和下拉框，可以在new编辑器的实例时选择自己需要的重新定义
         , toolbars: [[
@@ -67,7 +67,10 @@
         //,charset:"utf-8"
 
         //若实例化编辑器的页面手动修改的domain，此处需要设置为true
-        //,customDomain:false
+        ,customDomain:false
+
+        //手动修改页面的domain值
+        ,customDomainValue:'aa.com'
 
         //常用配置项目
         //,isShow : true    //默认显示编辑器
@@ -429,5 +432,7 @@
     window.UE = {
         getUEBasePath: getUEBasePath
     };
+
+    document.domain = window.UEDITOR_CONFIG.customDomainValue; 
 
 })();

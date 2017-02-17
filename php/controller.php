@@ -48,7 +48,15 @@ switch ($action) {
 /* 输出结果 */
 if (isset($_GET["callback"])) {
     if (preg_match("/^[\w_]+$/", $_GET["callback"])) {
-        echo htmlspecialchars($_GET["callback"]) . '(' . $result . ')';
+        //处理单文件跨域上传
+        if($_GET["callback"] == 'crossdomain'){
+
+            if (preg_match("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(/.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+/.?", $_GET["customDomainValue"])){
+                header('Location: ' . $_GET["customDomainValue"] . '/api/get_params.php?customDomainValue=' . $_GET["customDomainValue"] . 'result=' . $result);
+            }
+        }else{
+            echo htmlspecialchars($_GET["callback"]) . '(' . $result . ')';
+        }
     } else {
         echo json_encode(array(
             'state'=> 'callback参数不合法'

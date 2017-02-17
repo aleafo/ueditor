@@ -1,98 +1,95 @@
 Get Started
 =====
 
-> 鉴于目前 ISSUE 较多而维护时间较少，且在进行后续的版本更新，目前暂时关闭 ISSUE，若社区有人跟进，欢迎和我们联系。重复的问题，请参阅常见问题的 [FAQ Wiki](https://github.com/fex-team/ueditor/wiki/FAQ)。
+# 修改百度UEditor 单文件上传七牛云等第三方云服务 导致的跨域问题。
 
-## ueditor富文本编辑器介绍
+> 由于官方文档中对于多文件和涂鸦上传使用的是 flash 和 h5的方式，但是对于单文件上传使用的是提交隐藏iframe方式。因此在跨域的时候，单纯的修改 document.domain 并不能解决问题。对该问题官方文档也没有给出详细的说明。本文主要针对该问题进行一个补丁修改。
 
-UEditor是由百度web前端研发部开发所见即所得富文本web编辑器，具有轻量，可定制，注重用户体验等特点，开源基于MIT协议，允许自由使用和修改代码。
+## 1. 修改配置文件
 
-## 1 入门部署和体验
+修改 ueditor.config.js 
 
-### 1.1 下载编辑器
+``` js
 
-1. `git clone ` 仓库
-2. `npm install` 安装依赖（如果没有安装 grunt , 请先在全局安装 grunt）
-3. 在终端执行 `grunt default`
+// 服务器统一请求接口路径
+, serverUrl: "http://bb.com/" + "php/controller.php"
 
-### 1.2 创建demo文件
-解压下载的包，在解压后的目录创建demo.html文件，填入下面的html代码
+//若实例化编辑器的页面手动修改的domain，此处需要设置为true
+,customDomain: false
 
-```html
-<!DOCTYPE HTML>
-<html lang="en-US">
-<head>
-	<meta charset="UTF-8">
-	<title>ueditor demo</title>
-</head>
-<body>
-	<!-- 加载编辑器的容器 -->
-	<script id="container" name="content" type="text/plain">这里写你的初始化内容</script>
-	<!-- 配置文件 -->
-	<script type="text/javascript" src="ueditor.config.js"></script>
-	<!-- 编辑器源码文件 -->
-	<script type="text/javascript" src="ueditor.all.js"></script>
-	<!-- 实例化编辑器 -->
-	<script type="text/javascript">
-	    var ue = UE.getEditor('container');
-	</script>
-</body>
-</html>
+//手动修改页面的domain值, 这一行为新增
+,customDomainValue:'aa.com'
+
 ```
 
-### 1.3 在浏览器打开demo.html
+bbb.com/ 为要跨域的目标服务器域名
 
-如果看到了下面这样的编辑器，恭喜你，初次部署成功！
+## 2. 为上传的页面设置 document.domain
 
-![部署成功](http://fex.baidu.com/ueditor/doc/images/demo.png)
+通常，我们一旦给某个页面设置了 document.domain 那么即使你访问的目标网址在同源下，也会出现跨域的错误提示，除非被访问的页面也设置该属性（此处如有错误欢迎指正），但是document.domain 值只能设置为同一个顶级域名下，否则还是会出现错误提示，也就是说
+test1.aa.com 和 test2.aa.com 可以指定相同的 document.domain = "aa.com"; 而 如果 是 test1.aa.com 和 test2.bb.com 则无法指定相同的document.domain，会报错。
 
-### 1.4 传入自定义的参数
+解释了一大堆，我们的目的是为调用ueditor的页面设置一个 document.domain， 在ueditor.config.js 结尾处
 
-编辑器有很多可自定义的参数项，在实例化的时候可以传入给编辑器：
-```javascript
-var ue = UE.getEditor('container', {
-    autoHeight: false
-});
+``` js
+  window.UE = {
+        getUEBasePath: getUEBasePath
+    };
+
+	//新增下面一行，为ueditor 指定 document.domain属性
+    document.domain = window.UEDITOR_CONFIG.customDomainValue;
 ```
 
-配置项也可以通过ueditor.config.js文件修改，具体的配置方法请看[前端配置项说明](http://fex.baidu.com/ueditor/#start-config1.4 前端配置项说明.md)
+## 3. 在 simple.upload.js中修改 单文件提交的 action 值，用来在服务的进行判断
 
-### 1.5 设置和读取编辑器的内容
-
-通getContent和setContent方法可以设置和读取编辑器的内容
-```javascript
-var ue = UE.getEditor();
-//对编辑器的操作最好在编辑器ready之后再做
-ue.ready(function(){
-    //设置编辑器的内容
-    ue.setContent('hello');
-    //获取html内容，返回: <p>hello</p>
-    var html = ue.getContent();
-    //获取纯文本内容，返回: hello
-    var txt = ue.getContentTxt();
-});
+> 如果是 ueditor.all.js 则找到 simpleupload 所在的位置。
+修改如下位置
+``` js
+var imageActionUrl = me.getActionUrl(me.getOpt('imageActionName'));
 ```
 
-ueditor的更多API请看[API 文档](http://ueditor.baidu.com/doc "ueditor API 文档")
+改为
 
-## 2 详细文档
+``` js
+var imageActionUrl = me.getActionUrl(me.getOpt('imageActionName')) + '&callback=crossdomain&customDomainValue=' + me.getOpt('customDomainValue');
+```
 
-ueditor 官网：[http://ueditor.baidu.com](http://ueditor.baidu.com "ueditor 官网")
+## 3. 修改服务端（该服务端在域名b.com下），根据参数进行判断，将获取的结果传回原域名下的服务端接口，用于接收。
 
-ueditor API 文档：[http://ueditor.baidu.com/doc](http://ueditor.baidu.com/doc "ueditor API 文档")
+> 以PHP为例，修改 controller.php (这个为入口文件)
 
-ueditor github 地址：[http://github.com/fex-team/ueditor](http://github.com/fex-team/ueditor "ueditor github 地址")
+```php
+if (preg_match("/^[\w_]+$/", $_GET["callback"])) {
+	echo htmlspecialchars($_GET["callback"]) . '(' . $result . ')';
+}
+```
 
-ueditor 第三方插件贡献 wiki : [第三方插件贡献规范](http://ueditor.baidu.com/website/thirdproject.html)
+修改为
 
-ueditor 贡献代码规范（javascript）： [javascript规范](https://github.com/fex-team/styleguide/blob/master/javascript.md)
+``` php
+if (preg_match("/^[\w_]+$/", $_GET["callback"])) {
 
-## 3 第三方贡献
+	//处理单文件跨域上传
+	if($_GET["callback"] == 'crossdomain'){
 
-ueditor for nodejs 参考[https://github.com/netpi/ueditor](https://github.com/netpi/ueditor)
+		if (preg_match("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(/.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+/.?", $_GET["customDomainValue"])){
+			header('Location: ' . $_GET["customDomainValue"] . '/api/get_params.php?customDomainValue=' . $_GET["customDomainValue"] . 'result=' . $result);
+		}
+	}else{
+		echo htmlspecialchars($_GET["callback"]) . '(' . $result . ')';
+	}
 
-## 4 联系我们
+}
+```
 
-email：[ueditor@baidu.com](mailto://email:ueditor@baidu.com "发邮件给ueditor开发组")
+## 4. 在 aa.com 下新建文件 aa.com/api/get_params.php 用于跨域返回值。
 
-issue：[github issue](http://github.com/fex-team/ueditor/issues "ueditor 论坛")
+内容类似下面
+```php
+<?php
+if(isset($_GET['result'])){
+	if (preg_match("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(/.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+/.?", $_GET["customDomainValue"])){
+		echo '<html><head><script>document.domain="' . $_GET["customDomainValue"] . '"</script></head><body>'. $_GET['result'] .'</body></html>';
+	}
+}
+```
