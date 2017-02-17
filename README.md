@@ -12,7 +12,8 @@ Get Started
 ``` js
 
 // 服务器统一请求接口路径
-, serverUrl: "http://bb.com/" + "php/controller.php"
+, serverRoot: "http://bb.com"  //该行为新增
+, serverUrl: serverRoot + "php/controller.php"
 
 //若实例化编辑器的页面手动修改的domain，此处需要设置为true
 ,customDomain: false
@@ -53,8 +54,16 @@ var imageActionUrl = me.getActionUrl(me.getOpt('imageActionName'));
 ``` js
 var imageActionUrl = me.getActionUrl(me.getOpt('imageActionName')) + '&callback=crossdomain&customDomainValue=' + me.getOpt('customDomainValue');
 ```
+再修改写会的值
+```js
+link = me.options.imageUrlPrefix + json.url;
 
-## 3. 修改服务端（该服务端在域名b.com下），根据参数进行判断，将获取的结果传回原域名下的服务端接口，用于接收。
+//修改为
+link = me.getOpt('serverRoot') + me.options.imageUrlPrefix + json.url;
+```
+
+
+## 4. 修改服务端（该服务端在域名b.com下），根据参数进行判断，将获取的结果传回原域名下的服务端接口，用于接收。
 
 > 以PHP为例，修改 controller.php (这个为入口文件)
 
@@ -82,7 +91,7 @@ if (preg_match("/^[\w_]+$/", $_GET["callback"])) {
 }
 ```
 
-## 4. 在 aa.com 下新建文件 aa.com/api/get_params.php 用于跨域返回值。
+## 5. 在 aa.com 下新建文件 aa.com/api/get_params.php 用于跨域返回值。
 
 内容类似下面
 ```php
